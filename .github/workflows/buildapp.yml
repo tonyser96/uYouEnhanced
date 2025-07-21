@@ -142,21 +142,32 @@ jobs:
 
       - name: Fix compiling & Build Package
         id: build_package
-        run: |
-          cd ${{ github.workspace }}/main
-          sed -i '' "30s#.*#BUNDLE_ID = ${{ env.BUNDLE_ID }}#g" Makefile                          # Modify the bundle ID
-          sed -i '' "29s#.*#DISPLAY_NAME = ${{ env.APP_NAME }}#g" Makefile                        # Modify the app name
-          sed -i '' "1s#.*#export TARGET = iphone:clang:${{ inputs.sdk_version }}:14.0#g" Makefile # Modify the SDK version
-          make package THEOS_PACKAGE_SCHEME=rootless IPA=Payload/YouTube.app FINALPACKAGE=1
-          echo "package=$(ls -t packages | head -n1)" >>$GITHUB_OUTPUT
-          echo -e "==> \033[1mSHASUM256: $(shasum -a 256 packages/*.ipa | cut -f1 -d' ')\033[0m"
-          echo -e "==> \033[1mBundle ID: ${{ env.BUNDLE_ID }}\033[0m"
-
         env:
           THEOS: ${{ github.workspace }}/theos
           UYOU_VERSION: ${{ inputs.uyou_version }}
           BUNDLE_ID: ${{ inputs.bundle_id }}
           APP_NAME: ${{ inputs.app_name }}
+        run: |
+          # 1. First, navigate into the main directory
+          cd ${{ github.workspace }}/main
+          
+          # 2. Now, run all modifications on the Makefile
+          # This replaces the hardcoded SDK version everywhere
+          sed -i '' 's/17.5/${{ inputs.sdk_version }}/g' Makefile
+          
+          # These modify the app name and bundle ID using the env variables
+          sed -i '' "s/DISPLAY_NAME = .*$/DISPLAY_NAME = ${{ env.APP_NAME }}/g" Makefile
+          sed -i '' "s/BUNDLE_ID = .*$/BUNDLE_ID = ${{ env.BUNDLE_ID }}/g" Makefile
+      
+          # 3. Finally, run the build command once
+          make package THEOS_PACKAGE_SCHEME=rootless IPA=Payload/YouTube.app FINALPACKAGE=1
+          
+          # 4. Output the results
+          echo "package=$(ls -t packages | head -n1)" >>$GITHUB_OUTPUT
+          echo -e "==> \033[1mSHASUM256: $(shasum -a 256 packages/*.ipa | cut -f1 -d' ')\033[0m"
+          echo -e "==> \033[1mBundle ID: ${{ env.BUNDLE_ID }}\033[0m"
+
+        
 
       - name: Upload Artifact
         if: ${{ inputs.upload_artifact }}
