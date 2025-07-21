@@ -8,7 +8,7 @@ on:
     inputs:
       sdk_version:
         description: "iOS SDK Version"
-        default: "17.5"
+        default: "16.5"
         required: true
         type: string
       uyou_version:
@@ -65,6 +65,9 @@ jobs:
           path: main
           ref: ${{ github.event.inputs.commit_id || github.ref }}
           submodules: recursive
+
+      - name: Select specific Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_14.3.1.app/Contents/Developer
 
       - name: Install Dependencies
         run: brew install ldid dpkg make
